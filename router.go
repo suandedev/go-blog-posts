@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"go-a/model"
 	"net/http"
 
@@ -20,6 +21,37 @@ func Router() *echo.Echo {
 	e.DELETE("/users/:id", DeleteUser)
 	e.PUT("/users/:id", UpdateUser)
 	e.Any("/usr", GetData)
+	// err
+	e.HTTPErrorHandler = func(err error, c echo.Context) {
+		report, ok := err.(*echo.HTTPError)
+		if !ok {
+			report = echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+	
+		if castedObject, ok := err.(validator.ValidationErrors); ok {
+			for _, err := range castedObject {
+				switch err.Tag() {
+				case "required":
+					report.Message = fmt.Sprintf("%s is required", 
+						err.Field())
+				case "email":
+					report.Message = fmt.Sprintf("%s is not valid email", 
+						err.Field())
+				case "min":
+					report.Message = fmt.Sprintf("%s value must be minim than %s",
+						err.Field(), err.Param())
+				case "max":
+					report.Message = fmt.Sprintf("%s value must be max than %s",
+						err.Field(), err.Param())
+				}
+	
+				break
+			}
+		}
+	
+		c.Logger().Error(report)
+		c.JSON(report.Code, report)
+	}
 	return e
 }
 
@@ -44,7 +76,21 @@ func PostUser(c echo.Context) error {
 	
 	validate = validator.New()
 	if err := validate.Struct(user); err != nil {
-		return c.JSON(http.StatusBadGateway, err.Error())
+		// return c.JSON(http.StatusBadGateway, err.Error())
+		if caseObject, ok := err.(validator.ValidationErrors); ok {
+			for _, err := range caseObject {
+				switch err.Tag() {
+				case "required":
+					return c.JSON(http.StatusBadGateway, "is required " + err.Field())
+				case "email":
+					return c.JSON(http.StatusBadGateway, "is not valid email " + err.Field())
+				case "min":
+					return c.JSON(http.StatusBadGateway, "value " + err.Field() + " must more then " + err.Param())
+				case "max":
+					return c.JSON(http.StatusBadGateway, "value " + err.Field() + " must lower then " + err.Param())
+				}
+			}
+		}
 	}
 
 	// hash

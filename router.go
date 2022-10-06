@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+var validate *validator.Validate
 
 func Router() *echo.Echo {
 	e := echo.New()
@@ -71,12 +72,9 @@ func PostUser(c echo.Context) error {
 	if err := c.Bind(user); err != nil {
 		return c.JSON(http.StatusBadGateway, err.Error())
 	}
-
-	var validate *validator.Validate
 	
 	validate = validator.New()
 	if err := validate.Struct(user); err != nil {
-		// return c.JSON(http.StatusBadGateway, err.Error())
 		if caseObject, ok := err.(validator.ValidationErrors); ok {
 			for _, err := range caseObject {
 				switch err.Tag() {
@@ -132,6 +130,25 @@ func UpdateUser(c echo.Context) error {
 	user := new(model.User)
 	if err := c.Bind(user); err != nil {
 		return c.JSON(http.StatusBadGateway, err.Error())
+	}
+
+	// validate
+	validate = validator.New()
+	if err := validate.Struct(user); err != nil {
+		if caseObject, ok := err.(validator.ValidationErrors); ok {
+			for _, err := range caseObject {
+				switch err.Tag() {
+				case "required":
+					return c.JSON(http.StatusBadGateway, "is required " + err.Field())
+				case "email":
+					return c.JSON(http.StatusBadGateway, "is not valid email " + err.Field())
+				case "min":
+					return c.JSON(http.StatusBadGateway, "value " + err.Field() + " must more then " + err.Param())
+				case "max":
+					return c.JSON(http.StatusBadGateway, "value " + err.Field() + " must lower then " + err.Param())
+				}
+			}
+		}
 	}
 
 	// hash

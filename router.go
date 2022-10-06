@@ -4,10 +4,10 @@ import (
 	"go-a/model"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
-type M map[string]interface{}
 
 func Router() *echo.Echo {
 	e := echo.New()
@@ -37,6 +37,13 @@ func PostUser(c echo.Context) error {
 
 	user := new(model.User)
 	if err := c.Bind(user); err != nil {
+		return c.JSON(http.StatusBadGateway, err.Error())
+	}
+
+	var validate *validator.Validate
+	
+	validate = validator.New()
+	if err := validate.Struct(user); err != nil {
 		return c.JSON(http.StatusBadGateway, err.Error())
 	}
 

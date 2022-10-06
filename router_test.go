@@ -30,8 +30,8 @@ func TestPostUser(t *testing.T) {
 	r := gofight.New()
 	r.POST("/users").
 		SetJSON(gofight.D{
-			"username": "mades",
-			"password": "secret",
+			"username": "ssuande",
+			"password": "secrets",
 			"email": "made@gmail.com",
 		}).
 		Run(Router(), func(h1 gofight.HTTPResponse, h2 gofight.HTTPRequest) {

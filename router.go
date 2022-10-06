@@ -57,6 +57,8 @@ func Router() *echo.Echo {
 }
 
 func GetUsers(c echo.Context) error {
+	c.Request().Header.Set("Access-Control-Allow-Origin", "https://www.google.com")
+	c.Request().Header.Set("Access-Controll-Allow-Methods", "GET")
 	db := model.ConnectDb()
 
 	var users []model.User
